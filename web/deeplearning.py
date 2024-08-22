@@ -35,13 +35,14 @@ if not os.path.exists(TRAINED_MODEL_PATH):
 # Khởi tạo mô hình YOLOv10
 model = YOLOv10(TRAINED_MODEL_PATH)
 
-def predict_and_extract(model, image_path, filename, conf_threshold=0.3):
-    # Thực hiện dự đoán
+def predict_and_extract(model, image_path, filename, conf_threshold=0.5):
     results = model.predict(source=image_path, imgsz=1800, conf=conf_threshold)
 
-    # Lấy ảnh đã dự đoán
+    # Lưu ảnh kết quả
+    annotated_filename = f'{filename}_annotated.jpg'
+    annotated_filepath = os.path.join('./static/predict/', annotated_filename)
     annotated_img = results[0].plot()
-    cv2.imwrite('./static/predict/{}'.format(filename), annotated_img)
+    cv2.imwrite(annotated_filepath, annotated_img)
 
     # Lấy các bounding box và tên đối tượng
     boxes = results[0].boxes  # Các hộp dự đoán
@@ -50,14 +51,11 @@ def predict_and_extract(model, image_path, filename, conf_threshold=0.3):
     coords = []  # Danh sách lưu trữ tọa độ [x1, y1, x2, y2] và tên đối tượng
 
     for j in range(len(boxes)):
-        # Tọa độ hộp giới hạn
         x1, y1, x2, y2 = boxes[j].xyxy[0]
-        # Lấy tên lớp từ ID danh mục
         label = names[int(boxes[j].cls[0])]
         coords.append([label, int(x1), int(y1), int(x2), int(y2)])
 
     return coords
-
 
 def OCR(model, path, filename):
     img = np.array(load_img(path))
@@ -67,19 +65,15 @@ def OCR(model, path, filename):
         label, x1, y1, x2, y2 = coord
         cropped_img = img[y1:y2, x1:x2]
 
-        # Lưu ảnh đã cắt
         cropped_filename = f'{filename}_{idx}.jpg'
         cropped_filepath = os.path.join('./static/roi/', cropped_filename)
         cv2.imwrite(cropped_filepath, cropped_img)
 
-        cropped_img_gray = cv2.cvtColor(cropped_img, cv2.COLOR_BGR2GRAY)
-        _, license_plate_crop_thresh = cv2.threshold(cropped_img_gray, 64, 255, cv2.THRESH_BINARY_INV)
-        license_plate_text, license_plate_text_score = read_license_plate(cropped_img)
+        license_plate_text, license_plate_text_score = read_license_plate(cropped_filepath)
         text.append([cropped_filename, license_plate_text, license_plate_text_score])
+
     return text
 
 # Ví dụ sử dụng hàm:
-# image_path = 'test06.jpg'  # Đường dẫn đến tệp hình ảnh
-# print(OCR(model, image_path, 'test.jpg'))
-
-print(read_license_plate("C:/Users/X1 gen 9/Downloads/Automatic-License-Plate-Detection/web/static/roi/test.jpg_0.jpg"))
+image_path = 'test06.jpg'
+print(OCR(model, image_path, 'test'))

@@ -132,10 +132,10 @@ def read_license_plate(image_path):
     reader = easyocr.Reader(['en'], gpu=False)
     results = reader.readtext(adaptive_thresh_image)
 
-    # Kiểm tra kết quả
-    for bbox, text, prob in results:
-        print(f"Text: {text}, Probability: {prob}")
-        return text  # Trả về văn bản nhận diện được
+    if results:
+        bbox, text, prob = results[0]
+        if text:
+            return text, prob  # Trả về văn bản và xác suất nhận diện được
 
     return None  # Trường hợp không nhận diện được văn bản nào
 
