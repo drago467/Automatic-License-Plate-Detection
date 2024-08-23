@@ -28,6 +28,7 @@ from ultralytics import YOLOv10
 
 # Đảm bảo rằng tệp 'best.pt' đã tồn tại
 
+# Đường dẫn tới mô hình đã huấn luyện
 TRAINED_MODEL_PATH = 'best.pt'
 if not os.path.exists(TRAINED_MODEL_PATH):
     raise FileNotFoundError(f"Tệp mô hình '{TRAINED_MODEL_PATH}' không tồn tại.")
@@ -35,12 +36,15 @@ if not os.path.exists(TRAINED_MODEL_PATH):
 # Khởi tạo mô hình YOLOv10
 model = YOLOv10(TRAINED_MODEL_PATH)
 
-def predict_and_extract(model, image_path, filename, conf_threshold=0.5):
+def predict_and_extract(image_path, filename, conf_threshold=0.5):
     results = model.predict(source=image_path, imgsz=1800, conf=conf_threshold)
 
-    # Lưu ảnh kết quả
-    annotated_filename = f'{filename}_annotated.jpg'
-    annotated_filepath = os.path.join('./static/predict/', annotated_filename)
+    # Tách tên tệp và phần mở rộng
+    name, ext = os.path.splitext(filename)
+    
+    # Lưu ảnh kết quả với tên tệp đã chỉnh sửa
+    # annotated_filename = f'{name}_annotated{ext}'
+    annotated_filepath = os.path.join('./static/predict/', filename)
     annotated_img = results[0].plot()
     cv2.imwrite(annotated_filepath, annotated_img)
 
@@ -57,23 +61,28 @@ def predict_and_extract(model, image_path, filename, conf_threshold=0.5):
 
     return coords
 
-def OCR(model, path, filename):
+def OCR(path, filename):
     img = np.array(load_img(path))
-    coords = predict_and_extract(model, path, filename)
-    text = []
-    for idx, coord in enumerate(coords):
-        label, x1, y1, x2, y2 = coord
-        cropped_img = img[y1:y2, x1:x2]
+    coords = predict_and_extract(path, filename)
+    # text = []
+    
+    # Tách tên tệp và phần mở rộng
+    name, ext = os.path.splitext(filename)
 
-        cropped_filename = f'{filename}_{idx}.jpg'
-        cropped_filepath = os.path.join('./static/roi/', cropped_filename)
-        cv2.imwrite(cropped_filepath, cropped_img)
+    # for idx, coord in enumerate(coords):
+    label, x1, y1, x2, y2 = coords[0]
+    cropped_img = img[y1:y2, x1:x2]
 
-        license_plate_text, license_plate_text_score = read_license_plate(cropped_filepath)
-        text.append([cropped_filename, license_plate_text, license_plate_text_score])
+     # Lưu ảnh cắt với tên tệp đã chỉnh sửa giống với tên tệp đã lưu trong predict
+     # cropped_filename = f'{name}_cropped_{idx}{ext}'
+    cropped_filepath = os.path.join('./static/roi/', filename)
+    cv2.imwrite(cropped_filepath, cropped_img)
 
-    return text
+    license_plate_text, license_plate_text_score = read_license_plate(cropped_filepath)
+    # text.append(filename, license_plate_text, license_plate_text_score)
+
+    return license_plate_text
 
 # Ví dụ sử dụng hàm:
-image_path = 'test06.jpg'
-print(OCR(model, image_path, 'test'))
+# image_path = 'test06.jpg'
+# print(OCR(image_path, 'test06.jpg'))
