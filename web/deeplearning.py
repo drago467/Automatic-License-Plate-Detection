@@ -78,7 +78,8 @@ def OCR(path, filename):
     cropped_filepath = os.path.join('./static/roi/', filename)
     cv2.imwrite(cropped_filepath, cropped_img)
 
-    license_plate_text, license_plate_text_score = read_license_plate(cropped_filepath)
+    # license_plate_text, license_plate_text_score = read_license_plate(cropped_filepath)
+    license_plate_text = read_license_plate(cropped_filepath)
     # text.append(filename, license_plate_text, license_plate_text_score)
 
     return license_plate_text

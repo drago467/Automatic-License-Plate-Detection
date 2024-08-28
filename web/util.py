@@ -106,11 +106,13 @@ def format_license(text):
     return license_plate_
 
 
+
 def read_license_plate(image_path):
     # Đọc ảnh
     image = cv2.imread(image_path)
 
-    scale_percent = 150  # Tăng kích thước ảnh lên 150%
+    # Tăng kích thước ảnh lên 150%
+    scale_percent = 150
     width = int(image.shape[1] * scale_percent / 100)
     height = int(image.shape[0] * scale_percent / 100)
     dim = (width, height)
@@ -118,10 +120,14 @@ def read_license_plate(image_path):
     # Thay đổi kích thước ảnh
     resized_image = cv2.resize(image, dim, interpolation=cv2.INTER_LINEAR)
 
+    # Chuyển đổi ảnh sang thang độ xám
     gray_image = cv2.cvtColor(resized_image, cv2.COLOR_BGR2GRAY)
 
+    # Làm mịn ảnh bằng Gaussian Blur
+    blurred_image = cv2.GaussianBlur(gray_image, (5, 5), 0)
+
     # Cân bằng histogram
-    equalized_image = cv2.equalizeHist(gray_image)
+    equalized_image = cv2.equalizeHist(blurred_image)
 
     # Thử với Adaptive Thresholding
     adaptive_thresh_image = cv2.adaptiveThreshold(
@@ -138,6 +144,7 @@ def read_license_plate(image_path):
             return text, prob  # Trả về văn bản và xác suất nhận diện được
 
     return None  # Trường hợp không nhận diện được văn bản nào
+
 
 
 def get_car(license_plate, vehicle_track_ids):
